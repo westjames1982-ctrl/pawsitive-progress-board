@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import confetti from "canvas-confetti";
 import {
   DndContext,
   PointerSensor,
@@ -30,6 +31,24 @@ export function Board({
     const out: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], done: [] };
     for (const t of tasks) out[t.status].push(t);
     return out;
+  }, [tasks]);
+
+  const prevDoneIds = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const currentDone = new Set(tasks.filter((t) => t.status === "done").map((t) => t.id));
+    if (prevDoneIds.current) {
+      let newlyDone = 0;
+      for (const id of currentDone) if (!prevDoneIds.current.has(id)) newlyDone++;
+      if (newlyDone > 0) {
+        confetti({
+          particleCount: 120 * newlyDone,
+          spread: 80,
+          origin: { y: 0.7 },
+          colors: ["#a855f7", "#ec4899", "#f97316", "#fbbf24"],
+        });
+      }
+    }
+    prevDoneIds.current = currentDone;
   }, [tasks]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
